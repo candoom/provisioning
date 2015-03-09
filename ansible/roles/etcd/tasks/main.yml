@@ -1,28 +1,10 @@
-- name: etcd is uncompressed
-  unarchive:
-    src=etcd-v2.0.0-rc.1-linux-amd64.tar.gz
-    dest=/opt
-  tags: [etcd]
-- name: etcd has the soft link
-  file:
-    src=/opt/etcd-v2.0.0-rc.1-linux-amd64/etcd
-    dest=/usr/local/bin/etcd
-    state=link
-  tags: [etcd]
-- name: etcdctl has the soft link
-  file:
-    src=/opt/etcd-v2.0.0-rc.1-linux-amd64/etcdctl
-    dest=/usr/local/bin/etcdctl
-    state=link
-  tags: [etcd]
-- name: etcd service file is present
-  copy:
-    src=etcd.conf
-    dest=/etc/init/etcd.conf
-  tags: [etcd]
-- name: etcd service is started
-  service:
-    name=etcd
-    pattern=/usr/local/bin/etcd
-    state=started
-  tags: [etcd]
+- name: copy etcdctl
+  copy: src=etcdctl dest=/usr/local/sbin/etcdctl owner=root group=root mode=0755
+- name: start etcd-docker
+  docker:
+    # https://quay.io/repository/coreos/etcd?tag=v2.0.4
+    image: quay.io/coreos/etcd:v2.0.4
+    name: ETCD
+    ports: 127.0.0.1:4001:4001,2380:2380,2379:2379
+    command: -name etcd0 -advertise-client-urls http://{{ ansible_default_ipv4.address }}:2379,http://{{ ansible_default_ipv4.address }}:4001 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 -initial-advertise-peer-urls http://{{ ansible_default_ipv4.address }}:2380 -listen-peer-urls http://0.0.0.0:2380 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://{{ ansible_default_ipv4.address }}:2380 -initial-cluster-state new
+    state: running

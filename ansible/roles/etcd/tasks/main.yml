@@ -1,10 +1,17 @@
 - name: copy etcdctl
   copy: src=etcdctl dest=/usr/local/sbin/etcdctl owner=root group=root mode=0755
+  
+- name: opt/etcd/data directory is present
+  file:
+    path=/opt/etcd/data
+    state=directory
+    
 - name: start etcd-docker
   docker:
     # https://quay.io/repository/coreos/etcd?tag=v2.0.4
     image: quay.io/coreos/etcd:v2.0.4
     name: ETCD
     ports: 127.0.0.1:4001:4001,2380:2380,2379:2379
-    command: -name etcd0 -advertise-client-urls http://{{ ansible_default_ipv4.address }}:2379,http://{{ ansible_default_ipv4.address }}:4001 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 -initial-advertise-peer-urls http://{{ ansible_default_ipv4.address }}:2380 -listen-peer-urls http://0.0.0.0:2380 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://{{ ansible_default_ipv4.address }}:2380 -initial-cluster-state new
+    volumes: /opt/etcd/data:/opt/etcd/data:rw
+    command: -name etcd0 -data-dir /opt/etcd/data -advertise-client-urls http://{{ ansible_default_ipv4.address }}:2379,http://{{ ansible_default_ipv4.address }}:4001 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 -initial-advertise-peer-urls http://{{ ansible_default_ipv4.address }}:2380 -listen-peer-urls http://0.0.0.0:2380 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://{{ ansible_default_ipv4.address }}:2380 -initial-cluster-state new
     state: running
